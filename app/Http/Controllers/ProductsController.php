@@ -1,0 +1,155 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Product;
+use App\Models\Company;
+use Illuminate\Http\Request;
+
+class ProductsController extends Controller
+{
+    public function __construct()
+    {
+        $this->product = new Product();
+        $this->company = new Company();
+
+    }
+
+    /**
+     * 一覧画面
+     */
+    public function index(Request $request)
+    {
+        $products = $this->product->findAllProducts();
+        $user = auth()->user();
+        $companies = $this->company->get();
+
+         // Productモデルに基づいてクエリビルダを初期化
+    $query = Product::query();
+    // この行の後にクエリを逐次構築していきます。
+    // そして、最終的にそのクエリを実行するためのメソッド（例：get(), first(), paginate() など）を呼び出すことで、データベースに対してクエリを実行します。
+    
+
+    if($product_name = $request->product_name){
+        $query->where('product_name', 'LIKE', "%{$product_name}%");
+    }
+
+    if($company_id = $request->company_id){
+        $query->where('company_id', 'LIKE', "$company_id");
+    }
+    
+    $companies = $this->company->get();
+    $products = $query->paginate(10);
+
+    
+        return view('product.index', compact('products'), ['companies' => $companies]);
+    }
+
+    /**
+     * 登録画面
+     */
+    public function create(Request $request)
+    {
+
+        $companies = $this->company->get();
+
+
+        return view('product.create', compact('companies'));
+    } 
+    
+
+
+    /**
+     * 登録処理
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'product_name' => 'required',
+            'company_id' => 'required',
+            'price' => 'required',
+            'stock' => 'required',
+        ],
+        [
+            'product_name.required' => '商品名は必須です。',
+            'company_id.required' => 'メーカー名は必須項目です。',
+            'price.required' => '価格は必須です。',
+            'stock.required' => '在庫数は必須項目です。'
+        
+        ]);
+
+        if(request('img_path')){
+            $filename = request()->file('img_path')->getClientOriginalName();
+            $inputs['img_path']=request('img_path')->storeAs('public/images', $filename);
+
+        }else{
+            $filename = '';
+        }
+
+        $registerProducts = $this->product->InsertProduct($request,$filename);
+
+        return redirect()->route('products');
+    }
+
+    /**
+     * 詳細画面の表示
+     */
+    public function show($id)
+    {
+        $product = Product::find($id);
+
+        return view('product.show', compact('product'));
+    }
+
+    /**
+     * 編集画面の表示
+     */
+    public function edit($id)
+    {
+        $product = Product::find($id);
+        $companies = $this->company->get();
+
+        return view('product.edit', compact('product'))
+        ->with('companies', $companies);
+    }
+    
+
+    /**
+     * 更新処理
+     */
+    
+    public function update(Request $request, $id)
+    {
+        
+        $request->validate([
+            'product_name' => 'required',
+            'company_id' => 'required',
+            'price' => 'required',
+            'stock' => 'required',
+        ],
+        [
+            'product_name.required' => '商品名は必須です。',
+            'company_id.required' => 'メーカー名は必須項目です。',
+            'price.required' => '価格は必須です。',
+            'stock.required' => '在庫数は必須項目です。'
+        
+        ]);
+        $product = Product::find($id);
+        $updateProduct = $this->product->updateProduct($request, $product);
+        
+
+        return redirect()->route('products');
+    }
+
+    /**
+     * 削除処理
+     */
+    public function destroy($id)
+    {
+        // 指定されたIDのレコードを削除
+        $deleteProduct = $this->product->deleteProductById($id);
+        // 削除したら一覧画面にリダイレクト
+        return redirect()->route('products');
+    }
+
+}
