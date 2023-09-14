@@ -77,17 +77,29 @@ class ProductsController extends Controller
             'stock.required' => '在庫数は必須項目です。'
         
         ]);
+$img = $request->img_path->getClientOriginalName();
+        $img_path = Str::random(40) . '.' . $img;
 
+
+        DB::transaction(function () use($request, $img_path) {
+            
+            $product = new Product();
+            $product -> img_path = $img_path;
+
+            $product -> product_name = $request -> product_name;
+            $product -> company_id = $request -> company_id;
+            $product -> price = $request -> price;
+            $product -> stock = $request -> stock;
+            $product -> comment = $request -> comment;
+                
         if(request('img_path')){
-            $filename = request()->file('img_path')->getClientOriginalName();
-            $inputs['img_path']=request('img_path')->storeAs('public/images', $filename);
-
+            $filePath = $request -> img_path ->storeAs('public/images', $img_path);
         }else{
-            $filename = '';
+            $img_path = '';
         }
 
-        $registerProducts = $this->product->InsertProduct($request,$filename);
-
+        $product -> save();
+    });
         return redirect()->route('products');
     }
 
