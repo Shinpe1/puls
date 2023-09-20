@@ -70,7 +70,7 @@ class Product extends Model
     /**
      * 更新処理
      */
-    public function updateProduct($request, $product)
+    public function updateProduct($request, $product,$id)
     {
         $result = $product->fill([
             'product_name' => $request->product_name,
@@ -78,7 +78,7 @@ class Product extends Model
             'price' => $request->price,
             'stock' => $request->stock,
             'comment' => $request->comment,
-            'img_path' => $request -> img_path
+            'img_path' => $request->img_path
     
         ])->save();
 

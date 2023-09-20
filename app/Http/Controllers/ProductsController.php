@@ -5,6 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Company;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Exception;
 
 class ProductsController extends Controller
 {
@@ -77,7 +81,8 @@ class ProductsController extends Controller
             'stock.required' => '在庫数は必須項目です。'
         
         ]);
-$img = $request->img_path->getClientOriginalName();
+
+        $img = $request->img_path->getClientOriginalName();
         $img_path = Str::random(40) . '.' . $img;
 
 
@@ -100,6 +105,9 @@ $img = $request->img_path->getClientOriginalName();
 
         $product -> save();
     });
+
+       // $registerProducts = $this->product->InsertProduct($request,$filename);
+
         return redirect()->route('products');
     }
 
@@ -122,7 +130,8 @@ $img = $request->img_path->getClientOriginalName();
         $companies = $this->company->get();
 
         return view('product.edit', compact('product'))
-        ->with('companies', $companies);
+        ->with('companies', $companies)
+        ->with(['defaultName' => 'product_name','price', 'stock','company_id','comment']);
     }
     
 
@@ -130,7 +139,7 @@ $img = $request->img_path->getClientOriginalName();
      * 更新処理
      */
     
-    public function update(Request $request, $id)
+    public function update(Request $request, Product $product,$id)
     {
         
         $request->validate([
@@ -146,11 +155,41 @@ $img = $request->img_path->getClientOriginalName();
             'stock.required' => '在庫数は必須項目です。'
         
         ]);
-        $product = Product::find($id);
-        $updateProduct = $this->product->updateProduct($request, $product);
+
+        $product = Product::find($request->id);
+
         
+        DB::transaction(function () use ($product, $request) {
+
+            
+            $product -> product_name = $request -> product_name;
+            $product -> company_id = $request -> company_id;
+            $product -> price = $request -> price;
+            $product -> stock = $request -> stock;
+            $product -> comment = $request -> comment;
+
+            if($request->hasFile('img_path')) {
+
+                $product -> img_path = $request -> img_path;
+                
+                $filePath = $request -> img_path ->storeAs('public/images', $img_path);
+                
+            }
+            $product->save();
+
+        });
 
         return redirect()->route('products');
+            //     $filename = $request->img_path->getClientOriginalName();
+            //     $filePath = $request->img_path->storeAs('public/images', $filename);  
+            // }
+            // if(request('img_path')){
+            // }else{
+            //     $img_path = '';
+            
+            
+        // $updateProduct = $this->product->updateProduct($request, $product);
+    
     }
 
     /**
@@ -158,9 +197,15 @@ $img = $request->img_path->getClientOriginalName();
      */
     public function destroy($id)
     {
+        DB::transaction(function () use ($id) {
+            $product = Product::find($id);
+
+            $product->delete();
         // 指定されたIDのレコードを削除
-        $deleteProduct = $this->product->deleteProductById($id);
-        // 削除したら一覧画面にリダイレクト
+        // $deleteProduct = $this->product->deleteProductById($id);
+        // 
+        
+    });
         return redirect()->route('products');
     }
 
