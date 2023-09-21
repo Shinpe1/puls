@@ -3,7 +3,7 @@
 @section('content')
 <div class="container small">
 <h1>商品編集</h1>
-<form action="{{ route('products.update', ['id'=>$product->products_id]) }}" method="POST">
+<form action="{{ route('products.update', ['id'=>$product->products_id]) }}" method="POST" enctype="multipart/form-data">
 
 @csrf
 

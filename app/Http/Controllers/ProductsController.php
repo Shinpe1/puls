@@ -82,15 +82,13 @@ class ProductsController extends Controller
         
         ]);
 
-        $img = $request->img_path->getClientOriginalName();
+        $img = $request->file('img_path')->getClientOriginalName();
         $img_path = Str::random(40) . '.' . $img;
 
 
         DB::transaction(function () use($request, $img_path) {
             
             $product = new Product();
-            $product -> img_path = $img_path;
-
             $product -> product_name = $request -> product_name;
             $product -> company_id = $request -> company_id;
             $product -> price = $request -> price;
@@ -98,9 +96,10 @@ class ProductsController extends Controller
             $product -> comment = $request -> comment;
                 
         if(request('img_path')){
-            $filePath = $request -> img_path ->storeAs('public/images', $img_path);
+            $filePath = $request -> file('img_path') ->storeAs('public/images', $img_path);
+            $product -> img_path = $img_path;
         }else{
-            $img_path = '';
+            $product->img_path = null;
         }
 
         $product -> save();
@@ -139,7 +138,7 @@ class ProductsController extends Controller
      * 更新処理
      */
     
-    public function update(Request $request, Product $product,$id)
+    public function update(Request $request, $id)
     {
         
         $request->validate([
@@ -156,28 +155,27 @@ class ProductsController extends Controller
         
         ]);
 
-        $product = Product::find($request->id);
-
         
-        DB::transaction(function () use ($product, $request) {
 
+        DB::transaction(function () use($request, $id) {
             
+            $product = Product::find($id);
             $product -> product_name = $request -> product_name;
             $product -> company_id = $request -> company_id;
             $product -> price = $request -> price;
             $product -> stock = $request -> stock;
             $product -> comment = $request -> comment;
-
-            if($request->hasFile('img_path')) {
-
-                $product -> img_path = $request -> img_path;
                 
-                $filePath = $request -> img_path ->storeAs('public/images', $img_path);
-                
-            }
-            $product->save();
+        if($request ->file('img_path')){
+            $img = $request->file('img_path')->getClientOriginalName();
+            $path = Str::random(40) . '.' . $img;
+            $filePath = $request -> file('img_path') ->storeAs('public/images', $path);
+            
+            $product -> img_path = $path;
+        }
 
-        });
+        $product -> save();
+    });
 
         return redirect()->route('products');
             //     $filename = $request->img_path->getClientOriginalName();

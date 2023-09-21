@@ -71,7 +71,7 @@
 
                 <i class="fa fa-reply mr-1" aria-hidden="true"></i>{{ __('◀️ 戻る') }}
             </a>
-            <button type="submit" class="btn btn-success">
+            <button type="submit" class="btn btn-success" onclick= "return confirm('登録しますか？');">
                 {{ __('登録') }}
             </button>
         </div>
